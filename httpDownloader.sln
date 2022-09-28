@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "httpDownloader", "httpDownloader.csproj", "{D8007364-B995-48F7-940B-E184FD25C791}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D8007364-B995-48F7-940B-E184FD25C791}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8007364-B995-48F7-940B-E184FD25C791}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8007364-B995-48F7-940B-E184FD25C791}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8007364-B995-48F7-940B-E184FD25C791}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {41794FAC-6FF1-4138-A7A6-296BF27D431C}
+	EndGlobalSection
+EndGlobal
