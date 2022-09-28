@@ -22,6 +22,7 @@ namespace httpDownloader.Services
                         DownloadFile(item, settings.LocalStoragePath);
                     }).Start();
                 }
+                Console.WriteLine("=== Batch Finished ===");
             }
         }
 
