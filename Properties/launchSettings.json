@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "httpDownloader": {
+      "commandName": "Project",
+      "commandLineArgs": "-f urls.txt -o downloads -n 2 -l 100000"
+    }
+  }
+}

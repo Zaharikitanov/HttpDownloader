@@ -32,7 +32,6 @@ namespace httpDownloader.Services
                 concurrentThreadsAmount,
                 downloadSpeedInBytesPerSecond) =>
             {
-                var fileService = new FileService();
                 var parametersModel = new InputParametersModel();
 
                 parametersModel.SourceFile = sourceFilePath;
@@ -40,7 +39,8 @@ namespace httpDownloader.Services
                 parametersModel.ConcurrentThreadsAmount = concurrentThreadsAmount;
                 parametersModel.DownloadSpeedInBytesPerSecond = downloadSpeedInBytesPerSecond;
 
-                fileService.DownloadFilesConcurrently(parametersModel);
+                var fileService = new FileService(parametersModel);
+                fileService.DownloadFilesConcurrently();
             },
                 sourceFilePath,
                 localStoragePath,

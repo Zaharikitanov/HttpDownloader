@@ -7,50 +7,65 @@ namespace httpDownloader.Services
 {
     public class FileService
     {
-        public void DownloadFilesConcurrently(InputParametersModel settings)
+        class PreparedData
         {
-            var preparedData = PrepareDataForProcessing(settings);
+            private readonly List<ItemForDownload> data;
+            private volatile int nextFileIdx;
 
-            PrepareTargetDirectory(settings.LocalStoragePath);
+            public PreparedData(InputParametersModel settings)
+            {
+                data = RetrieveUrlsAndFilenamesFromFile(settings.SourceFile);
+                nextFileIdx = 0;
+            }
 
-            DownloaderService.MaxThrottledBytes = settings.DownloadSpeedInBytesPerSecond;
-
-            var workerThreads = preparedData.Select(concurrentCollection => new Thread(() => {
-                foreach (var item in concurrentCollection)
+            public ItemForDownload? GetNextFile()
+            {
+                lock (data)
                 {
-                    DownloadFile(item, settings.LocalStoragePath);
+                    if (data.Count <= nextFileIdx)
+                        return null;
+                    return data[nextFileIdx++];
                 }
-            })).ToList();
+            }
+        }
+
+        private DownloaderService _downloadService;
+        private InputParametersModel _settings;
+
+        public FileService(InputParametersModel settings)
+        {
+            _settings = settings;
+            _downloadService = new DownloaderService(_settings.DownloadSpeedInBytesPerSecond);
+        }
+
+        public void DownloadFilesConcurrently()
+        {
+            var preparedData = new PreparedData(_settings);
+
+            PrepareTargetDirectory(_settings.LocalStoragePath);
+
+            var workerThreads = new List<Thread>();
+            for (var i = 0; i < _settings.ConcurrentThreadsAmount; ++i)
+            {
+                workerThreads.Add(new Thread(() => WorkerThreadLoop(_downloadService, preparedData, _settings)));
+            }
 
             workerThreads.ForEach(x => x.Start());
             workerThreads.ForEach(x => x.Join());
         }
 
-        private void DownloadFile(ItemForDownload item, string localStoragePath)
+        private static void WorkerThreadLoop(
+            DownloaderService downloaderService,
+            PreparedData preparedData,
+            InputParametersModel settings
+            )
         {
-            try
+            ItemForDownload? file;
+            while ((file = preparedData.GetNextFile()) != null)
             {
-                using var client = new HttpClient();
-                var sourceAsByteArray = client.GetByteArrayAsync(item.UrlForDownload).GetAwaiter().GetResult();
-                using var fileStream = new MemoryStream(sourceAsByteArray);
-
-                Console.WriteLine($"Downloading {item.LocalFileName} on Thread {Thread.CurrentThread.ManagedThreadId}");
-
-                DownloaderService.ReadFully(fileStream, Path.Combine(localStoragePath, item.LocalFileName));
-
-                Console.WriteLine($"Downloaded {item.LocalFileName}.");
+                downloaderService.DownloadFile(file, settings.LocalStoragePath);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[{nameof(DownloadFile)}]: {ex.Message} on file {item.LocalFileName}");
-                return;
-            }
-        }
-
-        private List<List<ItemForDownload>> PrepareDataForProcessing(InputParametersModel settings)
-        {
-            var itemsList = RetrieveUrlsAndFilenamesFromFile(settings.SourceFile);
-            return itemsList.ChunkBy(settings.ConcurrentThreadsAmount);
+            Console.WriteLine($"Worker Thread {Thread.CurrentThread.ManagedThreadId} has nothing to do so it's going home. 🎉");
         }
 
         private void PrepareTargetDirectory(string path)
@@ -61,7 +76,7 @@ namespace httpDownloader.Services
             }
         }
 
-        private string ReadFile(string filePath)
+        private static string ReadFile(string filePath)
         {
             string fileContent;
 
@@ -72,7 +87,7 @@ namespace httpDownloader.Services
             return fileContent;
         }
 
-        private List<ItemForDownload> RetrieveUrlsAndFilenamesFromFile(string filePath)
+        private static List<ItemForDownload> RetrieveUrlsAndFilenamesFromFile(string filePath)
         {
             var urlsAndFilenamesCollection = new List<ItemForDownload>();
             var fileContent = ReadFile(filePath);
