@@ -1,6 +1,7 @@
 ﻿using httpDownloader.Extensions;
 using httpDownloader.Models;
 using System.Text;
+using System.Linq;
 
 namespace httpDownloader.Services
 {
@@ -12,18 +13,17 @@ namespace httpDownloader.Services
 
             PrepareTargetDirectory(settings.LocalStoragePath);
 
-            foreach (var concurrentCollection in preparedData)
-            {
-                DownloaderService.MaxThrottledBytes = settings.DownloadSpeedInBytesPerSecond;
+            DownloaderService.MaxThrottledBytes = settings.DownloadSpeedInBytesPerSecond;
 
+            var workerThreads = preparedData.Select(concurrentCollection => new Thread(() => {
                 foreach (var item in concurrentCollection)
                 {
-                    new Thread(() => {
-                        DownloadFile(item, settings.LocalStoragePath);
-                    }).Start();
+                    DownloadFile(item, settings.LocalStoragePath);
                 }
-                Console.WriteLine("=== Batch Finished ===");
-            }
+            })).ToList();
+
+            workerThreads.ForEach(x => x.Start());
+            workerThreads.ForEach(x => x.Join());
         }
 
         private void DownloadFile(ItemForDownload item, string localStoragePath)
